@@ -1,5 +1,11 @@
-import pygame, sys, os, random, argparse
+import argparse
+import os
+import random
+import sys
+
+import pygame
 from pygame.locals import *
+
 pygame.init()
 
 
@@ -15,6 +21,9 @@ DISPLAYWIDTH = 500
 DISPLAYHEIGHT = 200
 
 
+def unique_file_exists(file_path):
+    return os.path.isfile(file_path) and file_path.endswith('.mp3')
+
 # ==== ARGUMENTS ====
 
 ## parser object
@@ -26,18 +35,35 @@ parser.add_argument('--directory', '-d', default='./music/', help='The name of d
 ## Add shuffle option argument
 parser.add_argument('--shuffle', '-s', action='store_true', help='Enable shuffle mode')
 
+## Add unique file argument
+parser.add_argument('--file', '-f', help='The name of file to play. Must be .mp3 file')
+
 ## Parse the arguments
 args = parser.parse_args()
 
-## Set directory according to argument
-music_dir = args.directory
+## Set directory or file according to argument
+SINGLE_FILE = False
+if args.directory != "./music/" and args.file:
+    print(args.directory, args.file)
+    print("You can only use one of the arguments: --directory or --file")
+    sys.exit()
+if args.file:
+    SINGLE_FILE = True
+    if unique_file_exists(args.file):
+        music_file = args.file
+    else:
+        print("File does not exist or is not a .mp3 file")
+        sys.exit()
+else:
+    if os.path.isdir(args.directory):
+        music_dir = args.directory
 
 
 # ==== DISPLAY SETTINGS ====
 DISPLAY = pygame.display.set_mode((DISPLAYWIDTH, DISPLAYHEIGHT))
-font = pygame.font.Font("Montserrat-VariableFont_wght.ttf",  22)
-btn_font = pygame.font.Font("XanhMono-Regular.ttf", 22)
-icon = pygame.image.load("placa-giratoria.png")
+font = pygame.font.Font("assets/fonts/Montserrat-VariableFont_wght.ttf",  22)
+btn_font = pygame.font.Font("assets/fonts/XanhMono-Regular.ttf", 22)
+icon = pygame.image.load("assets/placa-giratoria.png")
 pygame.display.set_icon(icon)
 pygame.display.set_caption("Music Player")
 FPS = 60
@@ -70,9 +96,9 @@ next_button_rect      = pygame.Rect(310, 150, 90, 30)
 ## Get mp3 files recursively from selected directory
 def list_files(dir_path):
     l = []
-    for root, dirs, files in os.walk(dir_path):
+    for root, _, files in os.walk(dir_path):
         for file in files:
-            if ".mp3" in file:
+            if file.endswith('.mp3'):
                 file_path = os.path.join(root, file)
                 l.append(file_path)
     return l
@@ -106,11 +132,14 @@ def text_animation(text_rect):
 
 # ==== MAIN FUNCTION ====
 def main():
-
-    file_list = list_files(music_dir)
-    if args.shuffle:
-        random.shuffle(file_list)
-    songs = [pygame.mixer.Sound(file_name) for file_name in file_list]
+    if SINGLE_FILE:
+        file_list = [music_file]
+        songs = [pygame.mixer.Sound(args.file)]
+    else:
+        file_list = list_files(music_dir)
+        if args.shuffle:
+            random.shuffle(file_list)
+        songs = [pygame.mixer.Sound(file_name) for file_name in file_list]
 
     ## Set up channel for playback and play first track
     channel = pygame.mixer.Channel(0)
@@ -171,7 +200,7 @@ def main():
                         channel.set_volume(volume)
 
                 ## Left and right arrow keys to go to previous and next
-                elif event.key == K_RIGHT:
+                elif event.key == K_RIGHT and not SINGLE_FILE:
                     channel.stop()
                     ## go to next song, if out of playlist, go to first
                     track_index = (track_index + 1) % len(songs)
@@ -179,7 +208,7 @@ def main():
                     channel.play(track)
                     print(getSongName(file_list, track_index))
                     user_select = True
-                elif event.key == K_LEFT:
+                elif event.key == K_LEFT and not SINGLE_FILE:
                     channel.stop()
                     ## go to previous, if out of playlist, go to last
                     track_index = (track_index - 1) % len(songs)
@@ -233,7 +262,7 @@ def main():
             ## If mouse button released, do button's function
             elif event.type == pygame.MOUSEBUTTONUP:
                 ## -Previous- button, go back
-                if previous_button_rect.collidepoint(event.pos):
+                if previous_button_rect.collidepoint(event.pos) and not SINGLE_FILE:
                     ## change button to default color
                     prev_btn_color = BUTTONCOLOR
                     ## chage track, if first song, go to last
@@ -245,7 +274,7 @@ def main():
                     ## Set user_select variable True so playback doesn't jump all the way to the end
                     user_select = True
                 ## -Next- button, go forward
-                elif next_button_rect.collidepoint(event.pos):
+                elif next_button_rect.collidepoint(event.pos) and not SINGLE_FILE:
                     ## change button to default color
                     next_btn_color = BUTTONCOLOR
                     ## change track, if last song, go to first
@@ -286,29 +315,31 @@ def main():
         # ==== Draw buttons with text ====
 
         ## Draw the buttons
-        pygame.draw.rect(DISPLAY, prev_btn_color, previous_button_rect)
         pygame.draw.rect(DISPLAY, pause_btn_color, pause_button_rect)
-        pygame.draw.rect(DISPLAY, next_btn_color, next_button_rect)
+        if not SINGLE_FILE:
+            pygame.draw.rect(DISPLAY, prev_btn_color, previous_button_rect)
+            pygame.draw.rect(DISPLAY, next_btn_color, next_button_rect)
 
         ## Draw text on buttons (might change for icons later)
-        ### -Previous- button
-        prev_text = btn_font.render("|<", True, TEXTCOLOR)
-        prev_text_rect = prev_text.get_rect()
-        prev_text_rect.center = previous_button_rect.center
-        prev_text_rect.top -= 2
-        DISPLAY.blit(prev_text, prev_text_rect)
         ### -Pause- button
         pause_text = btn_font.render("|| / >", True, TEXTCOLOR)
         pause_text_rect = pause_text.get_rect()
         pause_text_rect.center = pause_button_rect.center
         pause_text_rect.top -= 2
         DISPLAY.blit(pause_text, pause_text_rect)
-        ### -Next- button
-        next_text = btn_font.render(">|", True, TEXTCOLOR)
-        next_text_rect = next_text.get_rect()
-        next_text_rect.center = next_button_rect.center
-        next_text_rect.top -= 2
-        DISPLAY.blit(next_text, next_text_rect)
+        if not SINGLE_FILE:
+            ### -Previous- button
+            prev_text = btn_font.render("|<", True, TEXTCOLOR)
+            prev_text_rect = prev_text.get_rect()
+            prev_text_rect.center = previous_button_rect.center
+            prev_text_rect.top -= 2
+            DISPLAY.blit(prev_text, prev_text_rect)
+            ### -Next- button
+            next_text = btn_font.render(">|", True, TEXTCOLOR)
+            next_text_rect = next_text.get_rect()
+            next_text_rect.center = next_button_rect.center
+            next_text_rect.top -= 2
+            DISPLAY.blit(next_text, next_text_rect)
 
 
         # ==== Update and clock tick ====
