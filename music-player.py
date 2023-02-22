@@ -44,15 +44,6 @@ FPS = 60
 fpsClock = pygame.time.Clock()
 
 
-# ==== SET PLAYLIST ====
-# file_list = os.listdir(music_dir)
-# if args.shuffle:
-#     random.shuffle(file_list)
-# songs = [pygame.mixer.Sound(music_dir + file_name) for file_name in file_list if ".mp3" in file_name]
-
-
-
-
 # ==== BUTTONS AND BANNER FOR CURRENT SONG TITLE
 ## Top banner is a Surface so it can have alpa color
 title_bg = pygame.Surface((DISPLAYWIDTH, 30))
@@ -106,7 +97,8 @@ def text_animation(text_rect):
 
 # ==== MAIN FUNCTION ====
 def main():
-
+    
+    ## Set playlist
     file_list = list_files(music_dir)
     if args.shuffle:
         random.shuffle(file_list)
