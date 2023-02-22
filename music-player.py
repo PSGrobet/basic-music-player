@@ -69,9 +69,6 @@ def list_files(dir_path):
     return l
 
 ## Get the name of current song form the filename and number in playlist
-# def getSongName(song_list, track_index):
-#     song_name = str(track_index + 1 ) + ". " + song_list[track_index].split(".mp3")[0]
-#     return song_name
 def getSongName(song_list, track_index):
     song_name = str(track_index + 1 ) + ". " + song_list[track_index].split("/")[-1]
     song_name = song_name.split("mp3")[0]
