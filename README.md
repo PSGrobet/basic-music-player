@@ -3,9 +3,10 @@ A super basic music player created with Python and Pygame as an exercise. Reads 
 
 **Usage:**
 
-`python music-player.py --directory/-d [directory path, default=./music/] --shuffle/-s [optional, activate shuffle mode]`
+`python music-player.py --directory/-d [directory path, default=./music/] --file/-f [file path] --shuffle/-s [optional, activate shuffle mode]`
 
 Put music files or links in the ./music/ directory in the same folder or pass --directory argument.
+Read unique file with --file argument.
 
 **Credits:**
 
